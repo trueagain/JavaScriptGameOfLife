@@ -10,14 +10,42 @@ function createEmptyTwoDimArray(n, m) {"use strict";
     return result;
 }
 
+function relMouseCoords(event) {
+    if (event.offsetX !== undefined && event.offsetY !== undefined) {
+        return {
+            x : event.offsetX,
+            y : event.offsetY
+        };
+    }
+    var totalOffsetX = 0;
+    var totalOffsetY = 0;
+    var canvasX = 0;
+    var canvasY = 0;
+    var currentElement = this;
+
+    do {
+        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+    } while (currentElement = currentElement.offsetParent)
+
+    canvasX = event.pageX - totalOffsetX;
+    canvasY = event.pageY - totalOffsetY;
+
+    return {
+        x : canvasX,
+        y : canvasY
+    }
+}
+
 function gameOfLifeMainFunction() {"use strict";
+    HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
     /*global document */
-    var canvas = document.getElementById("canvas"), i, j, lifeModel = {}, lifeView = {}, lifeController = {};
+    var canvas = document.getElementById("gof_canvas"), i, j, lifeModel = {}, lifeView = {}, lifeController = {};
 
     lifeModel.WIDTH = 50;
     lifeModel.HEIGHT = 50;
     lifeModel.cells = createEmptyTwoDimArray(lifeModel.WIDTH, lifeModel.HEIGHT);
-    lifeModel.nextMoment = function () {
+    lifeModel.nextMoment = function() {
         function toAdd(n, m, cellsArray, maxWidth, maxHeight) {
             if ((n >= 0) && (n < maxWidth) && (m >= 0) && (m < maxHeight)) {
                 return cellsArray[n][m];
@@ -74,31 +102,35 @@ function gameOfLifeMainFunction() {"use strict";
     }
 
     lifeController.active = 0;
+    lifeController.startButton = document.getElementById("gof_startButton");
+    lifeController.resetButton = document.getElementById("gof_resetButton");
     lifeController.getActive = function() {
         return this.active;
     }
     lifeController.setActive = function(a) {
         this.active = a;
         if (this.getActive() == 0) {
-            startButton.innerHTML = "Start";
+            this.startButton.innerHTML = "Start";
             this.clearTickFuncInterval();
         } else {
-            startButton.innerHTML = "Stop";
+            this.startButton.innerHTML = "Stop";
             this.createTickFuncInterval();
         }
     }
     lifeController.onmousedown = function(e) {
-        if ((e.pageX < (lifeModel.WIDTH * lifeView.CELL_SIZE)) && (e.pageY < (lifeModel.HEIGHT * lifeView.CELL_SIZE))) {
-            var x = Math.floor(e.pageX / lifeView.CELL_SIZE) - 1;
-            var y = Math.floor(e.pageY / lifeView.CELL_SIZE) - 1;
+        var coords = canvas.relMouseCoords(e);
+        var canvasX = coords.x;
+        var canvasY = coords.y;
+        if ((canvasX < (lifeModel.WIDTH * lifeView.CELL_SIZE)) && (canvasY < (lifeModel.HEIGHT * lifeView.CELL_SIZE))) {
+            var x = Math.floor(canvasX / lifeView.CELL_SIZE) - 1;
+            var y = Math.floor(canvasY / lifeView.CELL_SIZE) - 1;
             lifeModel.cells[x][y] = 1 - lifeModel.cells[x][y];
             lifeView.draw();
         }
     };
     lifeController.addButtonsListeners = function() {
         var thisController = this;
-        var startButton = document.getElementById("startButton");
-        startButton.onclick = function() {
+        this.startButton.onclick = function() {
             if (thisController.getActive() == 1) {
                 thisController.setActive(0);
             } else {
@@ -106,8 +138,7 @@ function gameOfLifeMainFunction() {"use strict";
             }
             lifeView.draw();
         }
-        var resetButton = document.getElementById("resetButton");
-        resetButton.onclick = function() {
+        this.resetButton.onclick = function() {
             lifeModel.reset();
             thisController.setActive(0);
             lifeView.draw();

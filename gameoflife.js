@@ -10,35 +10,16 @@ function createEmptyTwoDimArray(n, m) {"use strict";
     return result;
 }
 
-function relMouseCoords(event) {
-    if (event.offsetX !== undefined && event.offsetY !== undefined) {
-        return {
-            x : event.offsetX,
-            y : event.offsetY
-        };
-    }
-    var totalOffsetX = 0;
-    var totalOffsetY = 0;
-    var canvasX = 0;
-    var canvasY = 0;
-    var currentElement = this;
-
-    do {
-        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
-        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-    } while (currentElement = currentElement.offsetParent)
-
-    canvasX = event.pageX - totalOffsetX;
-    canvasY = event.pageY - totalOffsetY;
-
+function getMousePos(evt) {
+    var rect = this.getBoundingClientRect();
     return {
-        x : canvasX,
-        y : canvasY
-    }
+        x : evt.clientX - rect.left,
+        y : evt.clientY - rect.top
+    };
 }
 
 function gameOfLifeMainFunction() {"use strict";
-    HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+    HTMLCanvasElement.prototype.relMouseCoords = getMousePos;
     /*global document */
     var canvas = document.getElementById("gof_canvas"), i, j, lifeModel = {}, lifeView = {}, lifeController = {};
 
